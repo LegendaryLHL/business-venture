@@ -1,5 +1,6 @@
 #include "Cube.hpp"
 #include <iostream>
+#include <GLFW/glfw3.h>
 
 unsigned int Cube::VAO = 0;
 unsigned int Cube::VBO = 0;
@@ -61,6 +62,8 @@ void Cube::draw(Shader& shader) {
     shader.use();
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), position_);
+    float time = glfwGetTime();
+    model = glm::rotate(model, time, glm::vec3(0.5f, 1.0f, 0.0f));
     shader.setMat4("model", model);
 
     glBindVertexArray(VAO);

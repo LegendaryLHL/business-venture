@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <string>
 #include <vector>
@@ -22,6 +23,10 @@ class Game{
         GLFWwindow* window = nullptr;
         unsigned int textures[2];
         Shader shader;
+
+        glm::mat4 view;
+        glm::mat4 projection;
+        glm::vec3 cameraPosition;
 
         void init();
         void load();
