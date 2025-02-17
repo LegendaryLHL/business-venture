@@ -158,7 +158,7 @@ void Game::processInput(GLFWwindow *window)
         glm::vec3 click_world = ray_origin + t * ray_wor;
 
         if(cooldown < 0){
-            cooldown = 0.5f;
+            cooldown = 0.3f;
             entities.push_back(std::make_unique<Cube>(glm::vec3(click_world.x, cameraPosition.y + 1.0f, fixedDepth)));
         }
     }

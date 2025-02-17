@@ -42,6 +42,6 @@ class Game{
 
         static void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
 
-        float cooldown = 0.5f;
+        float cooldown = 0.3f;
 };
 

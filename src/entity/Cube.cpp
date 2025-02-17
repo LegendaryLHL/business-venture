@@ -31,7 +31,7 @@ static unsigned int indices[] = {
     3, 0, 4, 4, 7, 3   
 };
 
-Cube::Cube(glm::vec3 position) : Entity(position) {
+Cube::Cube(glm::vec3 position) : Entity(position){
     init();
 }
 
@@ -58,30 +58,11 @@ void Cube::init() {
 
     glBindVertexArray(0);
 
-    // texture
-    glGenTextures(1, &texture);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load("../assets/image/building.jpg", &width, &height, &nrChannels, 0);
-    if(data){
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else{
-        throw std::runtime_error("Failed to load texture");
-    }
-    stbi_image_free(data);
-
+    texture = loadTexture("../assets/image/building.jpg");
 
     initialized = true;
 }
+
 
 void Cube::update(float deltaTime){
     position += glm::vec3(0.0f, -speed, 0.0f) * deltaTime;

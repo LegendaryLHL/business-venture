@@ -5,9 +5,12 @@
 
 #include "../core/Shader.hpp"
 
+#include <string>
+#include <vector>
+
 class Entity {
 public:
-    Entity(glm::vec3 position = glm::vec3(0.0f)) : position(position) {}
+    Entity(glm::vec3 position = glm::vec3(0.0f)) : position(position){}
     virtual ~Entity() = default;
 
     virtual void init() = 0;
@@ -19,5 +22,7 @@ public:
     
 protected:
     glm::vec3 position;
+
+    static unsigned int loadTexture(const std::string& texturePath);
 };
 

@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+#include <string>
 #include <vector>
 
 #include "Entity.hpp"
