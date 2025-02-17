@@ -10,14 +10,17 @@
 #include "../entity/Entity.hpp"
 #include "Shader.hpp"
 
-const unsigned int HEIGHT = 600;
-const unsigned int WIDTH = 800;
-
 class Game{
     public: 
         void run();
 
     private: 
+        unsigned int screenWidth = 800;
+        unsigned int screenHeight = 600;
+        float nearPlane = 0.1f;
+        float farPlane = 100.0f;
+        float fov = 45.0f;
+
         std::vector<std::unique_ptr<Entity>> entities;
 
         GLFWwindow* window = nullptr;
@@ -31,11 +34,14 @@ class Game{
         void init();
         void load();
         void gameLoop();
-        void update();
+        void update(float deltaTime);
         void render();
         void processInput(GLFWwindow *window);
         void cleanUp();
+        glm::vec3 mousePick(GLFWwindow *window);
 
         static void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
+
+        float cooldown = 0.5f;
 };
 

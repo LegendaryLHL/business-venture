@@ -1,10 +1,13 @@
 #include "Cube.hpp"
 #include <iostream>
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
+
 
 unsigned int Cube::VAO = 0;
 unsigned int Cube::VBO = 0;
 unsigned int Cube::EBO = 0;
+unsigned int Cube::texture = 0;
 bool Cube::initialized = false;
 
 static float vertices[] = {
@@ -55,16 +58,44 @@ void Cube::init() {
 
     glBindVertexArray(0);
 
+    // texture
+    glGenTextures(1, &texture);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("../assets/image/building.jpg", &width, &height, &nrChannels, 0);
+    if(data){
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else{
+        throw std::runtime_error("Failed to load texture");
+    }
+    stbi_image_free(data);
+
+
     initialized = true;
+}
+
+void Cube::update(float deltaTime){
+    position += glm::vec3(0.0f, -speed, 0.0f) * deltaTime;
 }
 
 void Cube::draw(Shader& shader) {
     shader.use();
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), position_);
-    float time = glfwGetTime();
-    model = glm::rotate(model, time, glm::vec3(0.5f, 1.0f, 0.0f));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
     shader.setMat4("model", model);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    shader.setInt("texture0", 0);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);

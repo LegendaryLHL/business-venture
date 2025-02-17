@@ -1,7 +1,6 @@
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
-#include <stb/stb_image.h>
 
 #include <math.h>
 #include <iostream>
@@ -9,6 +8,7 @@
 
 #include "Game.hpp"
 #include "../entity/Cube.hpp"
+#include "../debug/Debug.hpp"
 
 void Game::run(){
     try{
@@ -31,13 +31,16 @@ void Game::init(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Business Venture", nullptr, nullptr);
+    window = glfwCreateWindow(screenWidth, screenHeight, "Business Venture", nullptr, nullptr);
     if(window == nullptr)
     {
         throw std::runtime_error("Failed to create GLFW window");
     }
 
+    glfwSwapInterval(1);
+
     glfwMakeContextCurrent(window);
+    glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
 
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
@@ -45,31 +48,6 @@ void Game::init(){
     }
 
     shader = Shader("../shaders/shader.vert", "../shaders/shader.frag");
-
-    // texture
-    glGenTextures(2, textures);
-
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load("../assets/image/building.jpg", &width, &height, &nrChannels, 0);
-    if(data){
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else{
-        throw std::runtime_error("Failed to load texture");
-    }
-    stbi_image_free(data);
-
-
-    shader.use();
-    shader.setInt("texture1", 0);
     
     glEnable(GL_DEPTH_TEST);
 
@@ -77,11 +55,10 @@ void Game::init(){
 }
 
 void Game::load(){
-    view = glm::mat4(1.0f);
     view = glm::lookAt(cameraPosition, 
             glm::vec3(0.0f, -0.3f, 0.0f), 
             glm::vec3(0.0f, 1.0f, 0.0f));
-    projection = glm::perspective(glm::radians(45.0f), static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(fov), static_cast<float>(screenWidth) / static_cast<float>(screenHeight), nearPlane, farPlane);
     shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
@@ -104,11 +81,25 @@ void Game::load(){
     }
 }
 
+void Game::update(float deltaTime){
+    cooldown -= deltaTime;
+    for (auto const& entity : entities) {
+        entity->update(deltaTime);
+    }
+}
+
 void Game::gameLoop(){
     load();
+
+    float lastFrameTime = glfwGetTime();
     while(!glfwWindowShouldClose(window))
     {
+        float currentFrameTime = glfwGetTime();
+        float deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
         processInput(window);
+        update(deltaTime);
         render();
     }
 }
@@ -116,10 +107,6 @@ void Game::gameLoop(){
 void Game::render(){
     glClearColor(0.52f, 0.8f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textures[0]);
 
     for (auto const& entity : entities) {
         entity->draw(shader);
@@ -141,7 +128,16 @@ void Game::cleanUp(){
 
 void Game::frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
+    Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+
     glViewport(0, 0, width, height);
+
+    game->screenWidth = width;
+    game->screenHeight = height;
+
+    game->projection = glm::perspective(glm::radians(game->fov), static_cast<float>(width) / static_cast<float>(height), game->nearPlane, game->farPlane);
+    game->shader.use();
+    game->shader.setMat4("projection", game->projection);
 }
 
 void Game::processInput(GLFWwindow *window)
@@ -152,25 +148,35 @@ void Game::processInput(GLFWwindow *window)
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        double mouseX, mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-
-        float x = (2.0f * mouseX) / WIDTH - 1.0f;
-        float y = 1.0f - (2.0f * mouseY) / HEIGHT;
-        float z = 1.0f;
-
-        glm::vec4 ray_clip = glm::vec4(x, y, -1.0f, 1.0f);
-
-        glm::vec4 ray_eye = glm::inverse(projection) * ray_clip;
-        ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
-
-        glm::vec3 ray_wor = glm::vec3(glm::inverse(view) * ray_eye);
-        ray_wor = glm::normalize(ray_wor);
+        glm::vec3 ray_wor = mousePick(window);
 
         glm::vec3 ray_origin = cameraPosition;
-        float t = -ray_origin.y / ray_wor.y;
+
+        float fixedDepth = -5.0f;
+
+        float t = (fixedDepth - ray_origin.z) / ray_wor.z;
         glm::vec3 click_world = ray_origin + t * ray_wor;
 
-        entities.push_back(std::make_unique<Cube>(glm::vec3(click_world.x, click_world.y, -2.0f)));
+        if(cooldown < 0){
+            cooldown = 0.5f;
+            entities.push_back(std::make_unique<Cube>(glm::vec3(click_world.x, cameraPosition.y + 1.0f, fixedDepth)));
+        }
     }
+}
+
+glm::vec3 Game::mousePick(GLFWwindow *window){
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    float x = (2.0f * mouseX) / screenWidth - 1.0f;
+    float y = 1.0f - (2.0f * mouseY) / screenHeight;
+    float z = -1.0f;
+
+    glm::vec4 ray_clip = glm::vec4(x, y, z, 1.0f);
+
+    glm::vec4 ray_eye = glm::inverse(projection) * ray_clip;
+    ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+
+    glm::vec3 ray_wor = glm::vec3(glm::inverse(view) * ray_eye);
+    return glm::normalize(ray_wor);
 }

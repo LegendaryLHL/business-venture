@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+
 #include <vector>
 
 #include "Entity.hpp"
@@ -9,12 +10,15 @@
 class Cube : public Entity {
 public:
     Cube(glm::vec3 position = glm::vec3(0.0f));
-    void init() override;  // Initializes cube buffers
-    void draw(Shader& shader) override;  // Renders the cube
-    static void cleanUp(); // Deletes VAO/VBO
+    void init() override;
+    void draw(Shader& shader) override;
+    void update(float deltaTime) override;
+    static void cleanUp();
 
 private:
-    static unsigned int VAO, VBO, EBO;  // Shared among all cubes
-    static bool initialized;  // Flag to track if `init()` was called
+    static unsigned int VAO, VBO, EBO, texture;
+    static bool initialized;
+
+    float speed = 4.0f;
 };
 
