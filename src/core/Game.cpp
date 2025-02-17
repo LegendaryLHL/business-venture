@@ -7,7 +7,10 @@
 #include <stdexcept>
 
 #include "Game.hpp"
-#include "../entity/Cube.hpp"
+#include "Asset.hpp"
+#include "../entity/Building.hpp"
+#include "../entity/Ground.hpp"
+#include "../entity/Entity.hpp"
 #include "../debug/Debug.hpp"
 
 void Game::run(){
@@ -51,45 +54,21 @@ void Game::init(){
     
     glEnable(GL_DEPTH_TEST);
 
-    cameraPosition = glm::vec3(0.0f, 2.0f, 10.0f);
+    cameraPosition = glm::vec3(0.0f, 5.0f, 10.0f);
+    projection = glm::perspective(glm::radians(fov), static_cast<float>(screenWidth) / static_cast<float>(screenHeight), nearPlane, farPlane);
+    shader.use();
+    shader.setMat4("projection", projection);
 }
 
 void Game::load(){
-    view = glm::lookAt(cameraPosition, 
-            glm::vec3(0.0f, -0.3f, 0.0f), 
-            glm::vec3(0.0f, 1.0f, 0.0f));
-    projection = glm::perspective(glm::radians(fov), static_cast<float>(screenWidth) / static_cast<float>(screenHeight), nearPlane, farPlane);
-    shader.use();
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
+    Asset::load();
 
-    std::vector<glm::vec3> cubePositions = {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-
-    for (int i = 0; i < cubePositions.size(); i++) {
-        entities.push_back(std::make_unique<Cube>(cubePositions[i]));
-    }
-}
-
-void Game::update(float deltaTime){
-    cooldown -= deltaTime;
-    for (auto const& entity : entities) {
-        entity->update(deltaTime);
-    }
+    entities.push_back(std::make_unique<Ground>());
 }
 
 void Game::gameLoop(){
     load();
+
 
     float lastFrameTime = glfwGetTime();
     while(!glfwWindowShouldClose(window))
@@ -104,7 +83,21 @@ void Game::gameLoop(){
     }
 }
 
+void Game::update(float deltaTime){
+    cooldown -= deltaTime;
+    for (auto const& entity : entities) {
+        entity->update(deltaTime);
+    }
+}
+
+
 void Game::render(){
+    view = glm::lookAt(cameraPosition, 
+            glm::vec3(0.0f, cameraPosition.y - 1.0f, 0.0f), 
+            glm::vec3(0.0f, 1.0f, 0.0f));
+    shader.use();
+    shader.setMat4("view", view);
+
     glClearColor(0.52f, 0.8f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -120,9 +113,8 @@ void Game::cleanUp(){
     if(window) {
         glfwDestroyWindow(window);
         window = nullptr;
-
     }
-    Cube::cleanUp();
+    Asset::cleanUp();
     glfwTerminate();
 }
 
@@ -159,7 +151,7 @@ void Game::processInput(GLFWwindow *window)
 
         if(cooldown < 0){
             cooldown = 0.3f;
-            entities.push_back(std::make_unique<Cube>(glm::vec3(click_world.x, cameraPosition.y + 1.0f, fixedDepth)));
+            entities.push_back(std::make_unique<Building>(glm::vec3(click_world.x, cameraPosition.y + 1.0f, fixedDepth)));
         }
     }
 }

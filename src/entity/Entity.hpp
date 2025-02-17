@@ -3,26 +3,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../core/Shader.hpp"
-
 #include <string>
 #include <vector>
+#include <map>
+
+#include "../core/Shader.hpp"
+#include "../core/Asset.hpp"
 
 class Entity {
 public:
-    Entity(glm::vec3 position = glm::vec3(0.0f)) : position(position){}
+    Entity(glm::vec3 position = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), Asset::Texture texture = Asset::Texture::BUILDING, Asset::Vertex = Asset::Vertex::CUBE);
     virtual ~Entity() = default;
 
-    virtual void init() = 0;
-    virtual void draw(Shader &shader) = 0;
+    virtual void draw(Shader &shader);
     virtual void update(float deltaTime) = 0;
 
-    void setPosition(glm::vec3 pos) { position = pos; }
-    glm::vec3 getPosition() const { return position; }
-    
 protected:
     glm::vec3 position;
+    glm::vec3 scale;
 
-    static unsigned int loadTexture(const std::string& texturePath);
+    Asset::Texture texture;
+    Asset::Vertex vertex;
 };
-
