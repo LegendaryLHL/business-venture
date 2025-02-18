@@ -13,6 +13,8 @@
 #include "../entity/Entity.hpp"
 #include "../debug/Debug.hpp"
 
+bool Game::isLost = false;
+
 void Game::run(){
     try{
         init();
@@ -63,7 +65,7 @@ void Game::init(){
 void Game::load(){
     Asset::load();
 
-    entities.push_back(std::make_unique<Ground>());
+    Entity::entities.push_back(std::make_unique<Ground>());
 }
 
 void Game::gameLoop(){
@@ -85,8 +87,24 @@ void Game::gameLoop(){
 
 void Game::update(float deltaTime){
     cooldown -= deltaTime;
-    for (auto const& entity : entities) {
+    for (auto const& entity : Entity::entities) {
         entity->update(deltaTime);
+    }
+
+    auto buildingBstIt = Building::buildingBst.rbegin(); 
+    while (buildingBstIt != Building::buildingBst.rend()){
+        Building* building = *buildingBstIt;
+        if(!building->isFalling){
+            float neededHeight = building->getPosition().y + 5.0f;
+            if (cameraPosition.y - neededHeight > 0.5f){
+                cameraPosition.y = cameraPosition.y - cameraSpeed * deltaTime; 
+            }
+            else if (cameraPosition.y - neededHeight < -0.5f){
+                cameraPosition.y = cameraPosition.y + cameraSpeed * deltaTime; 
+            }
+            break;
+        }
+        buildingBstIt++;
     }
 }
 
@@ -98,10 +116,12 @@ void Game::render(){
     shader.use();
     shader.setMat4("view", view);
 
-    glClearColor(0.52f, 0.8f, 0.92f, 1.0f);
+    float colorDiming = cameraPosition.y / 300.0f;
+
+    glClearColor(0.52f - colorDiming, 0.8f - colorDiming, 0.92f - colorDiming, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for (auto const& entity : entities) {
+    for (auto const& entity : Entity::entities) {
         entity->draw(shader);
     }
 
@@ -151,7 +171,8 @@ void Game::processInput(GLFWwindow *window)
 
         if(cooldown < 0){
             cooldown = 0.3f;
-            entities.push_back(std::make_unique<Building>(glm::vec3(click_world.x, cameraPosition.y + 1.0f, fixedDepth)));
+            std::unique_ptr<Entity> building = std::make_unique<Building>(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
+            Entity::entities.push_back(std::move(building));
         }
     }
 }

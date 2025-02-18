@@ -6,22 +6,23 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <set>
 
 #include "../entity/Entity.hpp"
+#include "../entity/Building.hpp"
 #include "Shader.hpp"
 
 class Game{
     public: 
         void run();
 
+        static bool isLost;
     private: 
         unsigned int screenWidth = 800;
         unsigned int screenHeight = 600;
         float nearPlane = 0.1f;
         float farPlane = 100.0f;
         float fov = 45.0f;
-
-        std::vector<std::unique_ptr<Entity>> entities;
 
         GLFWwindow* window = nullptr;
         unsigned int textures[2];
@@ -43,5 +44,6 @@ class Game{
         static void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
 
         float cooldown = 0.3f;
+        float cameraSpeed = 5.0f;
 };
 
