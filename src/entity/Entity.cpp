@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <algorithm>
 
 #include "Entity.hpp"
 
@@ -26,12 +27,7 @@ void Entity::draw(Shader &shader){
     glBindVertexArray(0);
 }
 
-bool Entity::checkCollision() {
-    // ground
-    if(onGround()){
-        return true;
-    }
-
+Entity* Entity::checkCollision() {
     // only for cube for now
     for (const auto& other : entities) {
         if (other.get() == this){
@@ -44,16 +40,24 @@ bool Entity::checkCollision() {
             position.y - 0.5f * scale.y < other->position.y + 0.5f * other->scale.y &&
             position.y + 0.5f * scale.y > other->position.y - 0.5f * other->scale.y 
         ) {
-            return true;
+            return other.get();
         }
     }
-    return false;
+    return nullptr;
 }
 
-bool Entity::onGround() {
-    if(position.y - 0.5f * scale.y < 0.5f){
-        return true;
+void Entity::update(float deltaTime){}
+
+void Entity::remove(){
+    auto it = std::find_if(entities.begin(), entities.end(),
+            [this](const std::unique_ptr<Entity>& entity) {
+            return entity.get() == this;
+            });
+
+    if (it != entities.end()) {
+        entities.erase(it);
     }
-    return false;
+    else{
+        throw "Tried deleting entity but does not exist.";
+    }
 }
-

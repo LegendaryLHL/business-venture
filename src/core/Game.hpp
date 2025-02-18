@@ -45,5 +45,10 @@ class Game{
 
         float cooldown = 0.3f;
         float cameraSpeed = 5.0f;
+        float moneyCooldown = 1.0f;
+        // random amount of time an event can occure 1. decision 2. corperate order
+        float eventCooldown = 10.0f;
+        int money = 100; 
+        unsigned int buildingCost = 10;
 };
 

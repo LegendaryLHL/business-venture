@@ -5,6 +5,9 @@
 #include <math.h>
 #include <iostream>
 #include <stdexcept>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 #include "Game.hpp"
 #include "Asset.hpp"
@@ -28,6 +31,8 @@ void Game::run(){
 }
 
 void Game::init(){
+    srand(time(0));
+
     if(!glfwInit()){
         throw std::runtime_error("Failed to initialize GLFW");
     }
@@ -56,7 +61,7 @@ void Game::init(){
     
     glEnable(GL_DEPTH_TEST);
 
-    cameraPosition = glm::vec3(0.0f, 5.0f, 10.0f);
+    cameraPosition = glm::vec3(0.0f, 4.0f, 10.0f);
     projection = glm::perspective(glm::radians(fov), static_cast<float>(screenWidth) / static_cast<float>(screenHeight), nearPlane, farPlane);
     shader.use();
     shader.setMat4("projection", projection);
@@ -65,12 +70,11 @@ void Game::init(){
 void Game::load(){
     Asset::load();
 
-    Entity::entities.push_back(std::make_unique<Ground>());
+    Ground ground;
 }
 
 void Game::gameLoop(){
     load();
-
 
     float lastFrameTime = glfwGetTime();
     while(!glfwWindowShouldClose(window))
@@ -87,8 +91,10 @@ void Game::gameLoop(){
 
 void Game::update(float deltaTime){
     cooldown -= deltaTime;
-    for (auto const& entity : Entity::entities) {
-        entity->update(deltaTime);
+    eventCooldown -= deltaTime;
+    moneyCooldown -= deltaTime;
+    for (int i = 0; i < Entity::entities.size(); i++) {
+        Entity::entities[i]->update(deltaTime);
     }
 
     auto buildingBstIt = Building::buildingBst.rbegin(); 
@@ -105,6 +111,24 @@ void Game::update(float deltaTime){
             break;
         }
         buildingBstIt++;
+    }
+
+    if(moneyCooldown < 0.0f){
+        moneyCooldown = 3.0f;
+        money += static_cast<int>(cameraPosition.y) - 4;
+    }
+
+    std::cout << eventCooldown << std::endl;
+
+    if(eventCooldown < 0.0f){
+        eventCooldown = 8.0f + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (15.0f - 8.0f)));
+
+        if(rand() % 2 == 0){
+            // decision
+        }
+        else{
+            // corperate order
+        }
     }
 }
 
@@ -169,10 +193,10 @@ void Game::processInput(GLFWwindow *window)
         float t = (fixedDepth - ray_origin.z) / ray_wor.z;
         glm::vec3 click_world = ray_origin + t * ray_wor;
 
-        if(cooldown < 0){
+        if(cooldown < 0 && money > buildingCost){
             cooldown = 0.3f;
-            std::unique_ptr<Entity> building = std::make_unique<Building>(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
-            Entity::entities.push_back(std::move(building));
+            Building building(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
+            money -= buildingCost;
         }
     }
 }

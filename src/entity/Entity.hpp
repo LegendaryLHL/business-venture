@@ -17,12 +17,12 @@ public:
     static std::vector<std::unique_ptr<Entity>> entities;
 
     virtual void draw(Shader &shader);
-    virtual void update(float deltaTime) = 0;
+    virtual void update(float deltaTime);
 
     const glm::vec3& getPosition() const { return position; }
 
-    bool checkCollision();
-    bool onGround();
+    void remove();
+    Entity* checkCollision();
 
 protected:
     glm::vec3 position;
@@ -30,4 +30,6 @@ protected:
 
     Asset::Texture texture;
     Asset::Vertex vertex;
+
+    bool isGround = false;
 };

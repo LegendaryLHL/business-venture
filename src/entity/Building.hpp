@@ -21,6 +21,8 @@ public:
         }
     };
 
+    static int countTop();
+
     static std::set<Building*, BuildingComparator> buildingBst;
 
 private:
