@@ -6,9 +6,11 @@
 
 #include "Entity.hpp"
 
-std::vector<std::unique_ptr<Entity>> Entity::entities;
+std::vector<Entity*> Entity::entities;
 
-Entity::Entity(glm::vec3 position, glm::vec3 scale, Asset::Texture texture, Asset::Vertex vertex) : position(position), scale(scale), texture(texture), vertex(vertex){}
+Entity::Entity(glm::vec3 position, glm::vec3 scale, Asset::Texture texture, Asset::Vertex vertex) : position(position), scale(scale), texture(texture), vertex(vertex){
+        entities.push_back(this);
+}
 
 void Entity::draw(Shader &shader){
     shader.use();
@@ -30,7 +32,7 @@ void Entity::draw(Shader &shader){
 Entity* Entity::checkCollision() {
     // only for cube for now
     for (const auto& other : entities) {
-        if (other.get() == this){
+        if (other == this){
             continue;
         }
 
@@ -40,7 +42,7 @@ Entity* Entity::checkCollision() {
             position.y - 0.5f * scale.y < other->position.y + 0.5f * other->scale.y &&
             position.y + 0.5f * scale.y > other->position.y - 0.5f * other->scale.y 
         ) {
-            return other.get();
+            return other;
         }
     }
     return nullptr;
@@ -50,14 +52,15 @@ void Entity::update(float deltaTime){}
 
 void Entity::remove(){
     auto it = std::find_if(entities.begin(), entities.end(),
-            [this](const std::unique_ptr<Entity>& entity) {
-            return entity.get() == this;
+            [this](const Entity* entity) {
+            return entity == this;
             });
 
     if (it != entities.end()) {
+        delete *it;
         entities.erase(it);
     }
     else{
-        throw "Tried deleting entity but does not exist.";
+        throw std::runtime_error("Tried deleting entity but does not exist.");
     }
 }

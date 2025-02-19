@@ -70,7 +70,7 @@ void Game::init(){
 void Game::load(){
     Asset::load();
 
-    Ground ground;
+    new Ground();
 }
 
 void Game::gameLoop(){
@@ -89,21 +89,46 @@ void Game::gameLoop(){
     }
 }
 
+void Game::panCamera(float height, float deltaTime){
+    float dy = std::fabs(cameraSpeed * deltaTime); 
+    if(dy > std::fabs(cameraPosition.y - height)){
+        cameraPosition.y = height;
+    }
+    else{
+        if (cameraPosition.y - height > 0.5f){
+            cameraPosition.y = cameraPosition.y - cameraSpeed * deltaTime; 
+        }
+        else if (cameraPosition.y - height < -0.5f){
+            cameraPosition.y = cameraPosition.y + cameraSpeed * deltaTime; 
+        }
+    }
+}
+
 void Game::update(float deltaTime){
+    if(isPaused){
+        return;
+    }
     cooldown -= deltaTime;
     eventCooldown -= deltaTime;
     moneyCooldown -= deltaTime;
     orderCooldown -= deltaTime;
-    for (int i = 0; i < Entity::entities.size(); i++) {
+    gameTime += deltaTime;
+
+    // From left because update could delete itselve
+    for (int i = Entity::entities.size() - 1; i >= 0; i--) {
         Entity::entities[i]->update(deltaTime);
     }
 
-    if(Game::isLost){
-        // std::cout << "lost" << std::endl;
+    if(isLost){
+        cameraSpeed = 50.0f;
+        float neededHeight = 4.0f;
+        panCamera(neededHeight, deltaTime);
         return;
     }
-    if(Game::isWon){
-        std::cout << "won" << std::endl;
+
+    if(isWon){
+        // temp
+        gameInit();
         return;
     }
 
@@ -112,27 +137,27 @@ void Game::update(float deltaTime){
         Building* building = *buildingBstIt;
         if(!building->isFalling){
             float neededHeight = building->getPosition().y + 5.0f;
-            if (cameraPosition.y - neededHeight > 0.5f){
-                cameraPosition.y = cameraPosition.y - cameraSpeed * deltaTime; 
-            }
-            else if (cameraPosition.y - neededHeight < -0.5f){
-                cameraPosition.y = cameraPosition.y + cameraSpeed * deltaTime; 
-            }
+            panCamera(neededHeight, deltaTime);
             break;
         }
         buildingBstIt++;
     }
 
+
     if(moneyCooldown < 0.0f){
         moneyCooldown = 3.0f;
         float actual = cameraPosition.y - 4.0f;
         if(actual != 0){
-            money += std::ceil(actual + std::exp(std::log(actual) * -0.1f));
+            money += std::ceil(std::pow(actual, 0.7));
         }
-        std::cout << "order " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " order running: "<< orderRunning<< " difficulty " << difficulty << std::endl;
+
+        // temp to play
+        if(orderRunning){
+            std::cout << "order " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " difficulty " << difficulty << std::endl;
+        }
     }
 
-    difficulty = std::ceil(static_cast<float>(cameraPosition.y) / 20.0f);
+    difficulty = std::ceil(static_cast<float>(money) / 300.0f);
 
     if(!orderRunning && eventCooldown < 0.0f){
         if(rand() % 2 == 0){
@@ -140,8 +165,8 @@ void Game::update(float deltaTime){
             eventCooldown = randomValue(8.0f, 15.0f);
         }
         else{
-            orderCooldown = randomValue(10.0f + difficulty * 6.0f, 20.0f + difficulty * 8.0f);
-            topRequired = std::round(randomValue(1.0f, difficulty * 1.5f));
+            topRequired = std::round(randomValue(difficulty, difficulty * 1.5f + 2));
+            orderCooldown = randomValue(topRequired * 6.0f, topRequired * 8.0f);
             orderRunning = true;
             std::cout << "order" << std::endl;
         }
@@ -162,11 +187,35 @@ void Game::update(float deltaTime){
 
     if(money > 2000){
         Game::isWon = true;
+        std::cout << "won, game time: " << gameTime << std::endl;
     }
 }
 
 float Game::randomValue(float start, float end){
     return start + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (end - start)));
+}
+
+void Game::gameInit(){
+    cooldown = 0.3f;
+    cameraSpeed = 5.0f;
+    moneyCooldown = 1.0f;
+    eventCooldown = 10.0f;
+    orderCooldown = 0.0f;
+    gameTime = 0.0f;
+    orderRunning = false;
+    isPaused = false;
+    money = 100; 
+
+    cameraPosition.y = 4.0f;
+
+    for (int i = Entity::entities.size() - 1; i >= 0; i--) {
+        if(Entity::entities[i]->isBuilding){
+            Entity::entities[i]->remove();
+        }
+    }
+
+    Game::isWon = false;
+    Game::isLost = false;
 }
 
 
@@ -179,10 +228,11 @@ void Game::render(){
 
     float colorDiming = cameraPosition.y / 300.0f;
 
+
     glClearColor(0.52f - colorDiming, 0.8f - colorDiming, 0.92f - colorDiming, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    for (auto const& entity : Entity::entities) {
+    for (Entity* const& entity : Entity::entities) {
         entity->draw(shader);
     }
 
@@ -191,6 +241,10 @@ void Game::render(){
 }
 
 void Game::cleanUp(){
+    for (int i = Entity::entities.size() - 1; i >= 0; i--) {
+        Entity::entities[i]->remove();
+    }
+
     if(window) {
         glfwDestroyWindow(window);
         window = nullptr;
@@ -232,7 +286,7 @@ void Game::processInput(GLFWwindow *window)
 
         if(cooldown < 0 && money > buildingCost){
             cooldown = 0.3f;
-            Building building(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
+            new Building(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
             money -= buildingCost;
         }
     }

@@ -1,7 +1,14 @@
 CXX = g++
 CC = gcc
-CFLAGS = -std=c++17 -O2
-CFLAGS_C = -std=c11 -O2  # Use appropriate C standard for glad.c
+
+ifdef DEBUG
+    CFLAGS = -std=c++17 -g -O0
+    CFLAGS_C = -std=c11 -g -O0
+else
+    CFLAGS = -std=c++17 -O2
+    CFLAGS_C = -std=c11 -O2
+endif
+
 LDFLAGS = -lglfw -lGL -ldl -lpthread -lX11 -lXrandr -lXi
 SRC = ../src
 INCLUDE = -I../include
