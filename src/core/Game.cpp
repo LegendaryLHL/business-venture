@@ -5,7 +5,6 @@
 #include <math.h>
 #include <iostream>
 #include <stdexcept>
-#include <iostream>
 #include <cstdlib>
 #include <ctime>
 
@@ -17,6 +16,7 @@
 #include "../debug/Debug.hpp"
 
 bool Game::isLost = false;
+bool Game::isWon = false;
 
 void Game::run(){
     try{
@@ -93,8 +93,18 @@ void Game::update(float deltaTime){
     cooldown -= deltaTime;
     eventCooldown -= deltaTime;
     moneyCooldown -= deltaTime;
+    orderCooldown -= deltaTime;
     for (int i = 0; i < Entity::entities.size(); i++) {
         Entity::entities[i]->update(deltaTime);
+    }
+
+    if(Game::isLost){
+        // std::cout << "lost" << std::endl;
+        return;
+    }
+    if(Game::isWon){
+        std::cout << "won" << std::endl;
+        return;
     }
 
     auto buildingBstIt = Building::buildingBst.rbegin(); 
@@ -115,21 +125,48 @@ void Game::update(float deltaTime){
 
     if(moneyCooldown < 0.0f){
         moneyCooldown = 3.0f;
-        money += static_cast<int>(cameraPosition.y) - 4;
+        float actual = cameraPosition.y - 4.0f;
+        if(actual != 0){
+            money += std::ceil(actual + std::exp(std::log(actual) * -0.1f));
+        }
+        std::cout << "order " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " order running: "<< orderRunning<< " difficulty " << difficulty << std::endl;
     }
 
-    std::cout << eventCooldown << std::endl;
+    difficulty = std::ceil(static_cast<float>(cameraPosition.y) / 20.0f);
 
-    if(eventCooldown < 0.0f){
-        eventCooldown = 8.0f + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (15.0f - 8.0f)));
-
+    if(!orderRunning && eventCooldown < 0.0f){
         if(rand() % 2 == 0){
             // decision
+            eventCooldown = randomValue(8.0f, 15.0f);
         }
         else{
-            // corperate order
+            orderCooldown = randomValue(10.0f + difficulty * 6.0f, 20.0f + difficulty * 8.0f);
+            topRequired = std::round(randomValue(1.0f, difficulty * 1.5f));
+            orderRunning = true;
+            std::cout << "order" << std::endl;
+        }
+        std::cout << "event" << std::endl;
+    }
+
+
+    if(orderRunning && orderCooldown < 0.0f){
+        if(Building::countTop() == topRequired){
+            eventCooldown = randomValue(8.0f, 15.0f);
+            orderRunning = false;
+        }
+        else{
+            std::cout << "lost " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " order running: "<< orderRunning<< std::endl;
+            Game::isLost = true;
         }
     }
+
+    if(money > 2000){
+        Game::isWon = true;
+    }
+}
+
+float Game::randomValue(float start, float end){
+    return start + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (end - start)));
 }
 
 

@@ -17,6 +17,7 @@ class Game{
         void run();
 
         static bool isLost;
+        static bool isWon;
     private: 
         unsigned int screenWidth = 800;
         unsigned int screenHeight = 600;
@@ -46,9 +47,14 @@ class Game{
         float cooldown = 0.3f;
         float cameraSpeed = 5.0f;
         float moneyCooldown = 1.0f;
-        // random amount of time an event can occure 1. decision 2. corperate order
         float eventCooldown = 10.0f;
+        float orderCooldown = 0.0f;
+        bool orderRunning = false;
+        unsigned int topRequired = 1;
+        unsigned int difficulty = 1;
         int money = 100; 
         unsigned int buildingCost = 10;
+
+        float randomValue(float start, float end);
 };
 
