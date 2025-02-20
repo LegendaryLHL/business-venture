@@ -11,11 +11,12 @@ endif
 
 LDFLAGS = -lglfw -lGL -ldl -lpthread -lX11 -lXrandr -lXi
 SRC = ../src
-INCLUDE = -I../include
+INCLUDE = -I../include -I../include/imgui
 TARGET = businessVenture
 EXTERNAL = ../external
 
-EFILE = glad.o stb_image.o
+EFILE = imgui.o imgui_draw.o imgui_widgets.o imgui_tables.o imgui_impl_glfw.o imgui_impl_opengl3.o
+EFILE_C = glad.o stb_image.o
 
 OBJS = main.o core/Game.o core/Shader.o core/Asset.o entity/Building.o entity/Entity.o
 
@@ -25,10 +26,13 @@ $(OBJS): %.o: $(SRC)/%.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-$(EFILE): %.o: $(EXTERNAL)/%.c
+$(EFILE): %.o: $(EXTERNAL)/%.cpp
+	$(CXX) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(EFILE_C): %.o: $(EXTERNAL)/%.c
 	$(CC) $(CFLAGS_C) $(INCLUDE) -c $< -o $@
 
-$(TARGET): $(OBJS) $(EFILE)
+$(TARGET): $(OBJS) $(EFILE) $(EFILE_C)
 	$(CXX) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: test clean

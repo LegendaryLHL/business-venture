@@ -1,5 +1,6 @@
+#include <algorithm>
+
 #include "Building.hpp"
-#include "algorithm"
 #include "../core/Game.hpp"
 
 std::set<Building*, Building::BuildingComparator> Building::buildingBst;

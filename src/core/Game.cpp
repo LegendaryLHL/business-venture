@@ -1,7 +1,10 @@
-#include <glad/glad.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <memory>
+#include "glad/glad.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
+#include <memory>
 #include <math.h>
 #include <iostream>
 #include <stdexcept>
@@ -65,6 +68,17 @@ void Game::init(){
     projection = glm::perspective(glm::radians(fov), static_cast<float>(screenWidth) / static_cast<float>(screenHeight), nearPlane, farPlane);
     shader.use();
     shader.setMat4("projection", projection);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsLight();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 24.0f);
+    io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 36.0f);
+    ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 void Game::load(){
@@ -83,9 +97,20 @@ void Game::gameLoop(){
         float deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         processInput(window);
         update(deltaTime);
         render();
+        ui();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();    
     }
 }
 
@@ -105,6 +130,7 @@ void Game::panCamera(float height, float deltaTime){
 }
 
 void Game::update(float deltaTime){
+    keyPressCooldown -= deltaTime;
     if(isPaused){
         return;
     }
@@ -113,6 +139,7 @@ void Game::update(float deltaTime){
     moneyCooldown -= deltaTime;
     orderCooldown -= deltaTime;
     gameTime += deltaTime;
+
 
     // From left because update could delete itselve
     for (int i = Entity::entities.size() - 1; i >= 0; i--) {
@@ -191,6 +218,116 @@ void Game::update(float deltaTime){
     }
 }
 
+void Game::ui() {
+    ImGuiIO& io = ImGui::GetIO();
+    float windowWidth = io.DisplaySize.x;
+    float windowHeight = io.DisplaySize.y;
+
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | 
+                             ImGuiWindowFlags_NoScrollbar;
+
+
+    if(windowWidth < 1600){
+        ImGui::PushFont(io.Fonts->Fonts[0]);
+    }
+    else{
+        ImGui::PushFont(io.Fonts->Fonts[1]);
+    }
+
+    if(isPaused){
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0.5f));
+
+        ImGui::Begin("Pause Menu", nullptr, flags);
+        ImGui::End();
+        ImGui::PopStyleColor();
+
+        // First box
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.7f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.5f, 0.2f, 1.0f));
+
+        float boxWidth = 300;
+        float boxHeight = 100;
+        float centerX = (windowWidth - boxWidth) * 0.5f;
+        float centerY = (windowHeight - boxHeight) * 0.5f - 60;
+
+        ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+        ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+
+        ImGui::Begin("StartBox", nullptr, flags);
+        ImGui::SetCursorPosY(30);
+
+        if(Game::isLost || Game::isWon){
+            if(ImGui::Button("Restart", ImVec2(260, 40))){
+                isPaused = false;
+                newGame = true;
+            }
+        }
+        else{
+            if(ImGui::Button(newGame ? "Start Game" : "Unpause", ImVec2(260, 40))) {
+                isPaused = false;
+                newGame = false;
+            }
+        }
+
+        ImGui::End();
+
+        // Second button
+        centerY += 120;
+
+        ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+        ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+
+        ImGui::Begin("TrophyBox", nullptr, flags);
+        ImGui::SetCursorPosY(30);
+
+
+        if (ImGui::Button("Trophies", ImVec2(260, 40))) {
+            // showTrophies = true;
+        }
+
+        ImGui::End();
+
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(4);
+    }
+    else{
+        // Info box
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.75f));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        int boxHeight = static_cast<int>(static_cast<float>(windowHeight) / 5.0f);
+        int margin = static_cast<int>(static_cast<float>(windowHeight) / 20.0f);
+
+        ImGui::SetNextWindowPos(ImVec2(margin, windowHeight - boxHeight - margin));
+        ImGui::SetNextWindowSize(ImVec2(windowWidth - margin * 2, boxHeight));
+        ImGui::Begin("Info Box", nullptr, flags);
+
+        if(orderRunning){
+            ImGui::Text("Order Cooldown: %.1f", orderCooldown);
+            ImGui::Text("Need: %d", topRequired);
+        }
+        ImGui::Text("Money: %dM", money);
+        ImGui::Text("Now: %d | Difficulty: %d", Building::countTop(), difficulty);
+
+        ImGui::End();
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::PopFont();
+    ImGui::PopStyleColor();
+}
+
 float Game::randomValue(float start, float end){
     return start + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (end - start)));
 }
@@ -204,6 +341,8 @@ void Game::gameInit(){
     gameTime = 0.0f;
     orderRunning = false;
     isPaused = false;
+    moneyMultiplier = 1.0f;
+    firstOrder = true;
     money = 100; 
 
     cameraPosition.y = 4.0f;
@@ -235,15 +374,16 @@ void Game::render(){
     for (Entity* const& entity : Entity::entities) {
         entity->draw(shader);
     }
-
-    glfwSwapBuffers(window);
-    glfwPollEvents();    
 }
 
 void Game::cleanUp(){
     for (int i = Entity::entities.size() - 1; i >= 0; i--) {
         Entity::entities[i]->remove();
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     if(window) {
         glfwDestroyWindow(window);
@@ -270,11 +410,18 @@ void Game::frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 void Game::processInput(GLFWwindow *window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-        glfwSetWindowShouldClose(window, true);
+        if(keyPressCooldown < 0 && !newGame){
+            keyPressCooldown = 0.3f;
+            isPaused = !isPaused;
+        }
     }
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
+        if(isPaused){
+            return;
+        }
+
         glm::vec3 ray_wor = mousePick(window);
 
         glm::vec3 ray_origin = cameraPosition;

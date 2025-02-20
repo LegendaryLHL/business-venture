@@ -1,7 +1,7 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
 
 #include <string>
 #include <vector>
@@ -41,6 +41,7 @@ class Game{
         void render();
         void processInput(GLFWwindow *window);
         void cleanUp();
+        void ui();
         glm::vec3 mousePick(GLFWwindow *window);
         void panCamera(float height, float deltaTime);
 
@@ -52,8 +53,12 @@ class Game{
         float eventCooldown = 10.0f;
         float orderCooldown = 0.0f;
         float gameTime = 0.0f;
+        float keyPressCooldown = 0.3f;
+        float moneyMultiplier = 1.0f;
+        bool newGame = true;
+        bool firstOrder = true;
         bool orderRunning = false;
-        bool isPaused = false;
+        bool isPaused = true;
         int money = 100; 
 
         unsigned int topRequired = 1;
