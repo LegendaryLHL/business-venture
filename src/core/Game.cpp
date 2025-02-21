@@ -21,9 +21,65 @@
 bool Game::isLost = false;
 bool Game::isWon = false;
 
+std::vector<std::string> Game::orderInfoTexts = {
+    "\"Going straight up is too predictable. Investors demand a creative expansion strategy.\"",
+    "\"Our vertical strategy is exceeding projections-pause all upward expansion immediately!\"",
+    "\"Shareholders demand a more diversified growth pattern. Expand sideways before proceeding.\"",
+    "\"We must future-proof our architecture! No more stacking until we establish a 'scalable' base.\"",
+    "\"Our structural vision must align with our corporate synergy. Horizontal expansion is now top priority.\"",
+    "\"The board has identified a risk in excessive upward growth. Redirect resources to lateral development.\"",
+    "\"Due to market volatility, we must stabilize before reaching new heights. Expand outward first.\"",
+    "\"A recent consultant report suggests we should 'widen our horizons'-literally. No more stacking sideway!\"",
+    "\"Upward growth? That's so last quarter. We're pivoting to horizontal expansion for now.\"",
+    "\"We need a strong foundation before we reach the clouds. Build sideways or risk total collapse!\"",
+    "\"A bold new vision: Before we build higher, we must build wider! No exceptions.\"",
+    "\"We don't just grow-we innovate our growth patterns. That means lateral movement first.\"",
+    "\"Studies show customers prefer buildings with 'visual harmony.' Widen the base before stacking!\"",
+    "\"The data is clear: Buildings that only go up are statistically riskier. Expand sideways immediately.\"",
+    "\"If we only go up, where’s the depth? Let’s build outward for a more '3D business model.'\"",
+    "\"Success isn't just about height-it's about stability. And stability comes from a wide foundation.\"",
+    "\"Every great empire starts with a strong base! No more stacking until we broaden our foundation.\"",
+    "\"We must embrace structural synergy! Lateral growth is the key to long-term success.\"",
+};
+
+std::vector<std::string> Game::infoTexts = {
+    "\"The higher we go, the richer we become. Flawless business model. No risks whatsoever.\"",
+    "\"Profit scales infinitely with height. We've cracked capitalism.\"",
+    "\"Remember: A taller building means a more successful company. That's just basic economics.\"",
+    "\"Our business strategy? Go up. Get money. No further questions.\"",
+    "\"Financial experts confirm: More floors = More profit. Science is amazing.\"",
+    "\"This isn't a reckless growth bubble-it's vertical innovation.\"",
+    "\"Why diversify revenue when we can just build taller? Genius.\"",
+    "\"Some say this is an unsustainable financial model. Those people were fired.\"",
+    "\"We have no backup plan. We only have 'up'.\"",
+    "\"Every great empire was built on a strong foundation. Ours is built on maximizing floor count.\"",
+	"\"No worries! If this collapses, we’ll just call it a 'strategic reset.'\"",
+	"\"Experts warn we may be 'over-leveraging' our height. Sounds like fake news.\"",
+	"\"Reminder: The last company that tried this is now a cautionary tale. But we're built different.\"",
+	"\"Risk management? Never heard of it.\"",
+	"\"They say 'what goes up must come down.' We say 'not if we keep building.'\"",
+	"\"We're totally in control of this situation. Probably.\"",
+	"\"If you think about it, a collapse is just another opportunity for growth.\"",
+	"\"We might be in trouble. But as long as we keep stacking, everything will be fine.\"",
+};
+
+std::vector<std::string> Game::topInfoTexts = {
+    "\"Uh… has anyone checked if the top actually exists?\"",
+	"\"This strategy is flawless. Unless there's some kind of height limit no one told us about…\"",
+	"\"Keep stacking. We'll figure out what happens when we reach the top when we get there.\"",
+	"\"We're so close to victory. Now’s definitely not the time to question anything.\"",
+	"\"The board of directors is nervous. They didn't think we’d actually make it this far.\"",
+	"\"If we stop now, all this was for nothing. If we keep going… well, let’s just hope for the best.\"",
+	"\"We've ignored physics, financial logic, and structural integrity this whole time. Why stop now?\"",
+	"\"Once we reach the top, we’ll be too big to fail. That's how it works, right?\"",
+	"\"Our 'build until we win' strategy has a 100% success rate. Because no one has ever gotten this far before.\"",
+	"\"Reaching the top will prove all our doubters wrong. Or it'll prove them very right.\"",
+};
+
 void Game::run(){
     try{
         init();
+        gameInit();
         gameLoop();
         cleanUp();
     }
@@ -134,6 +190,9 @@ void Game::update(float deltaTime){
     if(isPaused){
         return;
     }
+    if(decisionRunning){
+        return;
+    }
     cooldown -= deltaTime;
     eventCooldown -= deltaTime;
     moneyCooldown -= deltaTime;
@@ -150,12 +209,16 @@ void Game::update(float deltaTime){
         cameraSpeed = 50.0f;
         float neededHeight = 4.0f;
         panCamera(neededHeight, deltaTime);
+
+        // If last entity already left then pause
+        if(Entity::entities[Entity::entities.size() - 1]->getPosition().y < 2.0f){
+            isPaused = true;
+        }
         return;
     }
 
     if(isWon){
-        // temp
-        gameInit();
+        isPaused = true;
         return;
     }
 
@@ -171,38 +234,50 @@ void Game::update(float deltaTime){
     }
 
 
-    if(moneyCooldown < 0.0f){
+    if(moneyCooldown <= 0.0f){
         moneyCooldown = 3.0f;
         float actual = cameraPosition.y - 4.0f;
         if(actual != 0){
             money += std::ceil(std::pow(actual, 0.7));
         }
-
-        // temp to play
-        if(orderRunning){
-            std::cout << "order " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " difficulty " << difficulty << std::endl;
-        }
     }
 
     difficulty = std::ceil(static_cast<float>(money) / 300.0f);
 
-    if(!orderRunning && eventCooldown < 0.0f){
-        if(rand() % 2 == 0){
-            // decision
+    if(!orderRunning && eventCooldown <= 0.0f){
+        int randVal = rand() % 3;
+        if(randVal == 0){
+            // Nothing
+            infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
             eventCooldown = randomValue(8.0f, 15.0f);
         }
+        else if(randVal == 1){
+            decisionRunning = true;
+            // Corporate decision
+        }
         else{
-            topRequired = std::round(randomValue(difficulty, difficulty * 1.5f + 2));
+            // Corporate order
+            topRequired = std::max(static_cast<int>(std::round(randomValue(difficulty, difficulty * 1.5f + 2))), 2);
             orderCooldown = randomValue(topRequired * 6.0f, topRequired * 8.0f);
             orderRunning = true;
-            std::cout << "order" << std::endl;
+            infoText = orderInfoTexts[round(randomValue(0, orderInfoTexts.size() - 1))];
+
+            if(firstOrder){
+                decisionRunning = true;
+                decisionResult = true;
+                firstOrder = false;
+            }
         }
-        std::cout << "event" << std::endl;
     }
 
 
-    if(orderRunning && orderCooldown < 0.0f){
+    if(orderRunning && orderCooldown <= 0.0f){
         if(Building::countTop() == topRequired){
+            if(cameraPosition.y / 300.0f > 0.40f){
+                infoText = topInfoTexts[round(randomValue(0, topInfoTexts.size() - 1))];
+            }{
+                infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
+            }
             eventCooldown = randomValue(8.0f, 15.0f);
             orderRunning = false;
         }
@@ -212,7 +287,7 @@ void Game::update(float deltaTime){
         }
     }
 
-    if(money > 2000){
+    if(cameraPosition.y / 300.0f == 0.52f){
         Game::isWon = true;
         std::cout << "won, game time: " << gameTime << std::endl;
     }
@@ -246,27 +321,38 @@ void Game::ui() {
         ImGui::End();
         ImGui::PopStyleColor();
 
-        // First box
+        // First button
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20, 20));
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.6f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.7f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.5f, 0.2f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.12f, 0.12f, 0.12f, 0.9f)); 
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
 
-        float boxWidth = 300;
-        float boxHeight = 100;
+        float boxWidth = 280;
+        float boxHeight = 60;
         float centerX = (windowWidth - boxWidth) * 0.5f;
         float centerY = (windowHeight - boxHeight) * 0.5f - 60;
+
+        // set correct place
+        // 
+        if(Game::isLost){
+            // print you lost here
+            centerY += 120;
+        }
+        if(Game::isWon){
+            //print you won and gameTime
+            centerY += 120;
+        }
 
         ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
 
         ImGui::Begin("StartBox", nullptr, flags);
-        ImGui::SetCursorPosY(30);
 
         if(Game::isLost || Game::isWon){
             if(ImGui::Button("Restart", ImVec2(260, 40))){
+                gameInit(false);
                 isPaused = false;
                 newGame = true;
             }
@@ -287,8 +373,6 @@ void Game::ui() {
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
 
         ImGui::Begin("TrophyBox", nullptr, flags);
-        ImGui::SetCursorPosY(30);
-
 
         if (ImGui::Button("Trophies", ImVec2(260, 40))) {
             // showTrophies = true;
@@ -300,11 +384,47 @@ void Game::ui() {
         ImGui::PopStyleColor(4);
     }
     else{
-        // Info box
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+        int padding = static_cast<int>(static_cast<float>(windowWidth) / 60.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(padding, padding));
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.75f));
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+
+        if(decisionRunning){
+            // temp
+            decisionRunning = false;
+            // int pageHeight = static_cast<int>(static_cast<float>(windowHeight) / 5.0f);
+            // int pageMargin = static_cast<int>(static_cast<float>(windowHeight) / 20.0f);
+
+            // ImGui::SetNextWindowPos(ImVec2(pageMargin, windowHeight - pageHeight - pageMargin));
+            // ImGui::SetNextWindowSize(ImVec2(windowWidth - pageMargin * 2, pageHeight));
+            // ImGui::Begin("Info Box", nullptr, flags);
+
+            // std::string fullText = infoText + " - CEO";
+            // ImGui::TextWrapped("%s", fullText.c_str());
+
+            // ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+            // ImGui::Dummy(ImVec2(availableSpace.x, availableSpace.y - padding - ImGui::GetFont()->FontSize));
+
+            // if(orderRunning){
+                // ImGui::TextWrapped("Money: %dM  Order deadline: %.1f    Need: %d    Now: %d", money, orderCooldown < 0 ? 0 : orderCooldown, topRequired, Building::countTop());
+            // }
+            // else{
+                // ImGui::TextWrapped("Money: %dM", money);
+            // }
+
+            // ImGui::End();
+            if(decisionResult){
+                if(orderRunning){
+                }
+
+                decisionRunning = false;
+                decisionResult = false;
+            }
+        }
+
+        // Info box
         int boxHeight = static_cast<int>(static_cast<float>(windowHeight) / 5.0f);
         int margin = static_cast<int>(static_cast<float>(windowHeight) / 20.0f);
 
@@ -312,15 +432,27 @@ void Game::ui() {
         ImGui::SetNextWindowSize(ImVec2(windowWidth - margin * 2, boxHeight));
         ImGui::Begin("Info Box", nullptr, flags);
 
+        std::string fullText;
         if(orderRunning){
-            ImGui::Text("Order Cooldown: %.1f", orderCooldown);
-            ImGui::Text("Need: %d", topRequired);
+            fullText = infoText + " - CEO";
         }
-        ImGui::Text("Money: %dM", money);
-        ImGui::Text("Now: %d | Difficulty: %d", Building::countTop(), difficulty);
+        else{
+            fullText = infoText;
+        }
+        ImGui::TextWrapped("%s", fullText.c_str());
+
+        ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+        ImGui::Dummy(ImVec2(availableSpace.x, availableSpace.y - padding - ImGui::GetFont()->FontSize));
+
+        if(orderRunning){
+            ImGui::TextWrapped("Money: %dM  Order deadline: %.1f    Need: %d    Now: %d", money, orderCooldown < 0 ? 0 : orderCooldown, topRequired, Building::countTop());
+        }
+        else{
+            ImGui::TextWrapped("Money: %dM", money);
+        }
 
         ImGui::End();
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(2);
     }
 
@@ -332,7 +464,7 @@ float Game::randomValue(float start, float end){
     return start + static_cast<float>(rand()) / (static_cast<float>((float)RAND_MAX / (end - start)));
 }
 
-void Game::gameInit(){
+void Game::gameInit(bool paused){
     cooldown = 0.3f;
     cameraSpeed = 5.0f;
     moneyCooldown = 1.0f;
@@ -340,10 +472,11 @@ void Game::gameInit(){
     orderCooldown = 0.0f;
     gameTime = 0.0f;
     orderRunning = false;
-    isPaused = false;
+    isPaused = paused;
     moneyMultiplier = 1.0f;
     firstOrder = true;
     money = 100; 
+    infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
 
     cameraPosition.y = 4.0f;
 
@@ -431,7 +564,7 @@ void Game::processInput(GLFWwindow *window)
         float t = (fixedDepth - ray_origin.z) / ray_wor.z;
         glm::vec3 click_world = ray_origin + t * ray_wor;
 
-        if(cooldown < 0 && money > buildingCost){
+        if(cooldown <= 0 && money >= buildingCost){
             cooldown = 0.3f;
             new Building(glm::vec3(click_world.x, cameraPosition.y + 4.0f, fixedDepth));
             money -= buildingCost;

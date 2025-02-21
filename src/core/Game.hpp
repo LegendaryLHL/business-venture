@@ -58,14 +58,21 @@ class Game{
         bool newGame = true;
         bool firstOrder = true;
         bool orderRunning = false;
+        bool decisionRunning = false;
+        bool decisionResult = false;
         bool isPaused = true;
         int money = 100; 
+        std::string infoText = "";
 
         unsigned int topRequired = 1;
         unsigned int difficulty = 1;
         unsigned int buildingCost = 10;
 
         float randomValue(float start, float end);
-        void gameInit();
+        void gameInit(bool paused = true);
+
+        static std::vector<std::string> infoTexts;
+        static std::vector<std::string> orderInfoTexts;
+        static std::vector<std::string> topInfoTexts;
 };
 

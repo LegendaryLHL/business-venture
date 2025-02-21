@@ -75,7 +75,7 @@ int Building::countTop(){
     while (buildingBstIt != Building::buildingBst.rend()){
         Building* building = *buildingBstIt;
         if(!building->isFalling){
-            if(fabs(building->position.y - height) < 0.1f){
+            if(fabs(building->position.y - height) < 0.3f){
                 count++;
             }
             else{
