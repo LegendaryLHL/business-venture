@@ -10,6 +10,7 @@
 
 #include "../entity/Entity.hpp"
 #include "../entity/Building.hpp"
+#include "../event/Decision.hpp"
 #include "Shader.hpp"
 
 class Game{
@@ -58,14 +59,24 @@ class Game{
         bool newGame = true;
         bool firstOrder = true;
         bool orderRunning = false;
+        bool decisionRunning = false;
         bool isPaused = true;
+        Decision decision = Decision::decisionMap[DecisionType::FIRST_ORDER];
         int money = 100; 
-
-        unsigned int topRequired = 1;
         unsigned int difficulty = 1;
+        float rareEventRate = 0.005f;
+        unsigned int topRequired = 1;
         unsigned int buildingCost = 10;
+        std::string infoText = "";
+
 
         float randomValue(float start, float end);
-        void gameInit();
+        bool maybeHappen(float probability);
+        void gameInit(bool paused = true);
+        float executeDecision(bool isAcepted);
+
+        static std::vector<std::string> infoTexts;
+        static std::vector<std::string> orderInfoTexts;
+        static std::vector<std::string> topInfoTexts;
 };
 
