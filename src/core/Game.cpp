@@ -407,17 +407,6 @@ void Game::ui() {
         float centerX = (windowWidth - boxWidth) * 0.5f;
         float centerY = (windowHeight - boxHeight) * 0.5f - 60;
 
-        // set correct place
-        // 
-        if(Game::isLost){
-            // print you lost here
-            centerY += 120;
-        }
-        if(Game::isWon){
-            //print you won and gameTime
-            centerY += 120;
-        }
-
         ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
         ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
 
