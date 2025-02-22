@@ -79,7 +79,7 @@ class Game{
         float randomValue(float start, float end);
         bool maybeHappen(float probability);
         void gameInit(bool paused = true);
-        float executeDecision(bool isAcepted);
+        void executeDecision(bool isAcepted);
 
         static std::vector<std::string> infoTexts;
         static std::vector<std::string> orderInfoTexts;

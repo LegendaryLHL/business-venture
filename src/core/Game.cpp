@@ -84,7 +84,6 @@ std::vector<std::string> Game::topInfoTexts = {
 void Game::run(){
     try{
         init();
-        gameInit();
         gameLoop();
         cleanUp();
     }
@@ -225,7 +224,7 @@ void Game::panCamera(float height, float deltaTime){
     }
 }
 
-float Game::executeDecision(bool isAccepted) {
+void Game::executeDecision(bool isAccepted) {
     std::vector<EffectType> effects = isAccepted ? decision.acceptEffect : decision.declineEffect;
     
     for (EffectType effect : effects) {
@@ -275,8 +274,6 @@ float Game::executeDecision(bool isAccepted) {
                 break;
         }
     }
-
-    return moneyMultiplier; // Returns updated money rate modifier
 }
 
 
@@ -333,9 +330,8 @@ void Game::update(float deltaTime){
         moneyCooldown = 3.0f;
         float actual = cameraPosition.y - 4.0f;
         if(actual != 0){
-            money += std::ceil(std::pow(actual, 0.7));
+            money += std::ceil(std::pow(actual, 0.7)) * moneyMultiplier;
         }
-        std::cout << cameraPosition.y / 300.0f << std::endl;
     }
 
     difficulty = std::ceil(static_cast<float>(money) / 100.0f);
@@ -374,7 +370,7 @@ void Game::update(float deltaTime){
 
     if(orderRunning && orderCooldown <= 0.0f){
         if(Building::countTop() == topRequired){
-            if(cameraPosition.y / 300.0f > 0.40f){
+            if(cameraPosition.y / 300.0f > 0.4f){
                 infoText = topInfoTexts[round(randomValue(0, topInfoTexts.size() - 1))];
             }
             else{
@@ -388,9 +384,14 @@ void Game::update(float deltaTime){
         }
     }
 
-    if(cameraPosition.y / 300.0f > 0.52f){
+    if(cameraPosition.y / 300.0f > 0.7f){
         Game::isWon = true;
-        bestTime = std::min(gameTime, bestTime);
+        if(bestTime == 0.0f){
+            bestTime = gameTime;
+        }
+        else{
+            bestTime = std::min(gameTime, bestTime);
+        }
     }
 }
 
@@ -478,7 +479,7 @@ void Game::ui() {
                     ImGui::Text("You Lost! Try Again.");
                 } 
                 else if (Game::isWon) {
-                    ImGui::Text("You Won! Time: %.2f sec", gameTime);
+                    ImGui::Text("You Won! %.2f sec", gameTime);
                 }
                 ImGui::End();
                 centerY += 120;
@@ -489,18 +490,9 @@ void Game::ui() {
             ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
             ImGui::Begin("StartBox", nullptr, flags);
 
-            if(Game::isLost || Game::isWon){
-                if(ImGui::Button("Restart", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))){
-                    gameInit(false);
-                    isPaused = false;
-                    newGame = true;
-                }
-            }
-            else{
-                if(ImGui::Button(newGame ? "Start Game" : "Unpause", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))) {
-                    isPaused = false;
-                    newGame = false;
-                }
+            if(ImGui::Button(newGame ? "Start Game" : "Restart", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))) {
+                gameInit(false);
+                newGame = false;
             }
 
             ImGui::End();
@@ -617,6 +609,8 @@ void Game::gameInit(bool paused){
     money = 100; 
     difficulty = 1;
     buildingCost = 10;
+    orderRunning = false;
+    decisionRunning = false;
     infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
 
     cameraPosition.y = 4.0f;
@@ -692,6 +686,7 @@ void Game::processInput(GLFWwindow *window)
         if(keyPressCooldown < 0 && !newGame){
             keyPressCooldown = 0.3f;
             isPaused = !isPaused;
+            isTrophie = false;
         }
     }
 
