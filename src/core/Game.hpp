@@ -2,6 +2,7 @@
 
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
+#include <SDL2/SDL_mixer.h>
 
 #include <string>
 #include <vector>
@@ -56,11 +57,13 @@ class Game{
         float gameTime = 0.0f;
         float keyPressCooldown = 0.3f;
         float moneyMultiplier = 1.0f;
+        float bestTime = 0.0f;
         bool newGame = true;
         bool firstOrder = true;
         bool orderRunning = false;
         bool decisionRunning = false;
         bool isPaused = true;
+        bool isTrophie = false;
         Decision decision = Decision::decisionMap[DecisionType::FIRST_ORDER];
         int money = 100; 
         unsigned int difficulty = 1;
@@ -69,6 +72,9 @@ class Game{
         unsigned int buildingCost = 10;
         std::string infoText = "";
 
+        Mix_Music* bgMusic = nullptr;
+        Mix_Chunk* soundEffect = nullptr;
+        Mix_Chunk* soundEffect2 = nullptr;
 
         float randomValue(float start, float end);
         bool maybeHappen(float probability);

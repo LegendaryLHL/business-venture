@@ -9,7 +9,7 @@ else
     CFLAGS_C = -std=c11 -O2
 endif
 
-LDFLAGS = -lglfw -lGL -ldl -lpthread -lX11 -lXrandr -lXi
+LDFLAGS = -lglfw -lGL -ldl -lpthread -lX11 -lXrandr -lXi -lSDL2 -lSDL2_mixer
 SRC = ../src
 INCLUDE = -I../include -I../include/imgui
 TARGET = businessVenture

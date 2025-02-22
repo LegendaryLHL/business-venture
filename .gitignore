@@ -1,3 +1,4 @@
 /build/*
 !build/Makefile
 .cache
+compile_commands.json

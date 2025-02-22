@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 #include <memory>
 #include <math.h>
@@ -138,6 +140,41 @@ void Game::init(){
     io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 24.0f);
     io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 36.0f);
     ImGui_ImplOpenGL3_CreateFontsTexture();
+
+
+    // audio
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        std::string error = std::string("Failed to initialize SDL: ") + SDL_GetError();
+        throw std::runtime_error(error.c_str());
+    }
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        std::string error = std::string("Failed to initialize SDL_mixer: ") + Mix_GetError();
+        throw std::runtime_error(error.c_str());
+    }
+
+    bgMusic = Mix_LoadMUS("../assets/sound/BusinessVenture.wav");
+    if (!bgMusic) {
+        std::string error = std::string("Failed to load background music: ") + Mix_GetError();
+        throw std::runtime_error(error.c_str());
+    }
+
+    soundEffect = Mix_LoadWAV("../assets/sound/SoundEffect1.wav");
+    if (!soundEffect) {
+        std::string error = std::string("Failed to load sound effect: ") + Mix_GetError();
+        throw std::runtime_error(error.c_str());
+    }
+
+    soundEffect2 = Mix_LoadWAV("../assets/sound/SoundEffect2.wav");
+    if (!soundEffect2) {
+        std::string error = std::string("Failed to load sound effect: ") + Mix_GetError();
+        throw std::runtime_error(error.c_str());
+    }
+
+    // Background Music
+    if (Mix_PlayingMusic() == 0) {
+        Mix_PlayMusic(bgMusic, -1);
+    }
 }
 
 void Game::load(){
@@ -214,12 +251,6 @@ float Game::executeDecision(bool isAccepted) {
                 for (int i = 0; i < difficulty; i++) {
                     Building* building = *Building::buildingBst.rbegin();
                     building->remove();
-                }
-                break;
-
-            case EffectType::RANDOM_BUILDING_PLACEMENT:
-                for (int i = 0; i < difficulty; i++) {
-                    new Building(glm::vec3(randomValue(-10, 10), cameraPosition.y + BUILDING_PLACEMENT, BUILDING_DEPTH));
                 }
                 break;
 
@@ -304,9 +335,10 @@ void Game::update(float deltaTime){
         if(actual != 0){
             money += std::ceil(std::pow(actual, 0.7));
         }
+        std::cout << cameraPosition.y / 300.0f << std::endl;
     }
 
-    difficulty = std::ceil(static_cast<float>(money) / 300.0f);
+    difficulty = std::ceil(static_cast<float>(money) / 100.0f);
 
     if(!orderRunning && eventCooldown <= 0.0f){
         if(rand() % 2 == 0){
@@ -314,7 +346,13 @@ void Game::update(float deltaTime){
             int randomIndex = floor(randomValue(1, Decision::decisionMap.size() - 1));
             decision = std::next(Decision::decisionMap.begin(), randomIndex)->second;
             decisionRunning = true;
-            infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
+            if(cameraPosition.y / 300.0f > 0.40f){
+                infoText = topInfoTexts[round(randomValue(0, topInfoTexts.size() - 1))];
+            }
+            else{
+                infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
+            }
+
             eventCooldown = randomValue(8.0f, 15.0f);
         }
         else{
@@ -330,6 +368,7 @@ void Game::update(float deltaTime){
                 firstOrder = false;
             }
         }
+        Mix_PlayChannel(-1, soundEffect2, 0);
     }
 
 
@@ -337,21 +376,21 @@ void Game::update(float deltaTime){
         if(Building::countTop() == topRequired){
             if(cameraPosition.y / 300.0f > 0.40f){
                 infoText = topInfoTexts[round(randomValue(0, topInfoTexts.size() - 1))];
-            }{
+            }
+            else{
                 infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
             }
             eventCooldown = randomValue(12.0f, 20.0f);
             orderRunning = false;
         }
         else{
-            std::cout << "lost " << orderCooldown << " need: " << topRequired << " money: " << money << "M" << " now: " << Building::countTop() << " order running: "<< orderRunning<< std::endl;
             Game::isLost = true;
         }
     }
 
-    if(cameraPosition.y / 300.0f == 0.52f){
+    if(cameraPosition.y / 300.0f > 0.52f){
         Game::isWon = true;
-        std::cout << "won, game time: " << gameTime << std::endl;
+        bestTime = std::min(gameTime, bestTime);
     }
 }
 
@@ -390,72 +429,95 @@ void Game::ui() {
         ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0.5f));
 
-        ImGui::Begin("Pause Menu", nullptr, flags);
+        ImGui::Begin("Pause Menu", nullptr, flags | ImGuiWindowFlags_NoInputs);
         ImGui::End();
         ImGui::PopStyleColor();
 
-        // First button
+        int padding = 10;
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(padding, padding));
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.12f, 0.12f, 0.12f, 0.9f)); 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
 
-        float boxWidth = 280;
-        float boxHeight = 60;
-        float centerX = (windowWidth - boxWidth) * 0.5f;
-        float centerY = (windowHeight - boxHeight) * 0.5f - 60;
 
-        ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
-        ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+        if(isTrophie){
+            float boxWidth = 280;
+            float boxHeight = ImGui::GetFontSize() + 2 * padding;
+            float centerX = (windowWidth - boxWidth) * 0.5f;
+            float centerY = (windowHeight - boxHeight) * 0.5f - 60;
 
-
-        if(Game::isLost || Game::isWon){
-            ImGui::Begin("Result", nullptr, flags);
-            if (Game::isLost) {
-                ImGui::Text("You Lost! Try Again.");
-            } 
-            else if (Game::isWon) {
-                ImGui::Text("You Won! Time: %.2f sec", gameTime);
-            }
-            ImGui::End();
-            centerY += 120;
             ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
             ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
-        }
 
-        ImGui::Begin("StartBox", nullptr, flags);
-
-        if(Game::isLost || Game::isWon){
-            if(ImGui::Button("Restart", ImVec2(260, 40))){
-                gameInit(false);
-                isPaused = false;
-                newGame = true;
+            ImGui::Begin("Result", nullptr, flags);
+            ImGui::Text("Best Time: %.2f sec", bestTime);
+            ImGui::End();
+            centerY += 120;
+            boxHeight = ImGui::GetFontSize() + 4 * padding;
+            ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+            ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+            ImGui::Begin("BackBox", nullptr, flags);
+            if(ImGui::Button("Back", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))){
+                isTrophie = false;
             }
+            ImGui::End();
         }
         else{
-            if(ImGui::Button(newGame ? "Start Game" : "Unpause", ImVec2(260, 40))) {
-                isPaused = false;
-                newGame = false;
+            float boxWidth = 280;
+            float boxHeight = ImGui::GetFontSize() + 2 * padding;
+            float centerX = (windowWidth - boxWidth) * 0.5f;
+            float centerY = (windowHeight - boxHeight) * 0.5f - 60;
+
+            if(Game::isLost || Game::isWon){
+                ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+                ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+                ImGui::Begin("Result", nullptr, flags);
+                if (Game::isLost) {
+                    ImGui::Text("You Lost! Try Again.");
+                } 
+                else if (Game::isWon) {
+                    ImGui::Text("You Won! Time: %.2f sec", gameTime);
+                }
+                ImGui::End();
+                centerY += 120;
             }
+
+            boxHeight = ImGui::GetFontSize() + 4 * padding;
+            ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+            ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+            ImGui::Begin("StartBox", nullptr, flags);
+
+            if(Game::isLost || Game::isWon){
+                if(ImGui::Button("Restart", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))){
+                    gameInit(false);
+                    isPaused = false;
+                    newGame = true;
+                }
+            }
+            else{
+                if(ImGui::Button(newGame ? "Start Game" : "Unpause", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))) {
+                    isPaused = false;
+                    newGame = false;
+                }
+            }
+
+            ImGui::End();
+
+            // Second button
+            centerY += 120;
+
+            ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
+            ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
+
+            ImGui::Begin("TrophyBox", nullptr, flags);
+
+            if (ImGui::Button("Trophies", ImVec2(boxWidth - 2 * padding, boxHeight - 2 * padding))) {
+                isTrophie = true;
+            }
+            ImGui::End();
         }
-
-        ImGui::End();
-
-        // Second button
-        centerY += 120;
-
-        ImGui::SetNextWindowPos(ImVec2(centerX, centerY));
-        ImGui::SetNextWindowSize(ImVec2(boxWidth, boxHeight));
-
-        ImGui::Begin("TrophyBox", nullptr, flags);
-
-        if (ImGui::Button("Trophies", ImVec2(260, 40))) {
-            // showTrophies = true;
-        }
-
-        ImGui::End();
 
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor(4);
@@ -597,6 +659,11 @@ void Game::cleanUp(){
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    Mix_FreeMusic(bgMusic);
+    Mix_FreeChunk(soundEffect);
+    Mix_CloseAudio();
+    SDL_Quit();
+
     if(window) {
         glfwDestroyWindow(window);
         window = nullptr;
@@ -643,7 +710,12 @@ void Game::processInput(GLFWwindow *window)
         float t = (fixedDepth - ray_origin.z) / ray_wor.z;
         glm::vec3 click_world = ray_origin + t * ray_wor;
 
-        if(cooldown <= 0 && money >= static_cast<int>(buildingCost) && !decisionRunning){
+        if(cooldown <= 0 && !decisionRunning){
+            if(money < static_cast<int>(buildingCost)){
+                Mix_PlayChannel(-1, soundEffect, 0);
+                cooldown = 0.3f;
+                return;
+            }
             cooldown = 0.3f;
             new Building(glm::vec3(click_world.x, cameraPosition.y + BUILDING_PLACEMENT, fixedDepth));
             money -= buildingCost;
