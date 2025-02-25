@@ -62,6 +62,7 @@ class Game{
         bool firstOrder = true;
         bool orderRunning = false;
         bool decisionRunning = false;
+        bool firstOrderRunning = false;
         bool isPaused = true;
         bool isTrophie = false;
         Decision decision = Decision::decisionMap[DecisionType::FIRST_ORDER];

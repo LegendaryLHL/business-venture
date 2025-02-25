@@ -362,6 +362,7 @@ void Game::update(float deltaTime){
                 decision = Decision::decisionMap[DecisionType::FIRST_ORDER];
                 decisionRunning = true;
                 firstOrder = false;
+                firstOrderRunning = true;
             }
         }
         Mix_PlayChannel(-1, soundEffect2, 0);
@@ -535,6 +536,19 @@ void Game::ui() {
             ImGui::TextWrapped("%s", decision.description.c_str());
 
             ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+
+            if (firstOrderRunning){
+                float textureWidth = 630.0f;
+                float textureHeight = 500.0f;
+                float aspectRatio = textureWidth / textureHeight;
+                ImVec2 imageSize = ImVec2((availableSpace.y * 0.7f * aspectRatio), availableSpace.y * 0.7f);
+                unsigned int textureId = Asset::textureMap[Asset::Texture::TUT];
+                ImGui::SetCursorPosX((availableSpace.x - imageSize.x) * 0.5f);
+                ImGui::Image(static_cast<ImTextureID>(textureId), imageSize);
+
+                availableSpace = ImGui::GetContentRegionAvail();
+            }
+
             ImGui::Dummy(ImVec2(availableSpace.x, availableSpace.y - padding - ImGui::GetFont()->FontSize - 20));
 
             ImGui::Spacing();
@@ -546,10 +560,12 @@ void Game::ui() {
             if (ImGui::Button("Accept", buttonSize)) {
                 executeDecision(true);
                 decisionRunning = false;
+                firstOrderRunning = false;
             }
             ImGui::SameLine(false);
             if (ImGui::Button("Decline", buttonSize)) {
                 decisionRunning = false;
+                firstOrderRunning = false;
             }
 
             ImGui::End();
@@ -611,6 +627,7 @@ void Game::gameInit(bool paused){
     buildingCost = 10;
     orderRunning = false;
     decisionRunning = false;
+    firstOrderRunning = false;
     infoText = infoTexts[round(randomValue(0, infoTexts.size() - 1))];
 
     cameraPosition.y = 4.0f;

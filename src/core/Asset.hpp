@@ -8,6 +8,7 @@ class Asset{
         enum class Texture {
             BUILDING,
             GRASS,
+            TUT,
         };
 
         enum class Vertex {

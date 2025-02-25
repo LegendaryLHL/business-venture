@@ -34,9 +34,10 @@ void Asset::load() {
 
     Asset::textureMap[Texture::BUILDING] = loadTexture("../assets/image/building.jpg");
     Asset::textureMap[Texture::GRASS] = loadTexture("../assets/image/grass.jpg");
+    Asset::textureMap[Texture::TUT] = loadTexture("../assets/image/tut.jpg");
 }
 
-unsigned int Asset::loadTexture(std::string texturePath){
+unsigned int Asset::loadTexture(std::string texturePath) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
@@ -46,22 +47,24 @@ unsigned int Asset::loadTexture(std::string texturePath){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
+
+        stbi_image_free(data);
+    } else {
         throw std::runtime_error("Failed to load texture at: " + texturePath);
     }
-    stbi_image_free(data);
 
     return textureID;
 }
+
 
 Asset::VertexData Asset::loadVertex(std::vector<float>& vertices, std::vector<unsigned int>& indices){
     VertexData data;
