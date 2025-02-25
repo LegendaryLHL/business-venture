@@ -145,3 +145,18 @@ std::unordered_map<DecisionType, Decision> Decision::decisionMap = {
     )},
 };
 
+std::string Decision::effectString(EffectType effect){
+    switch (effect) {
+            case EffectType::REMOVE_BUILDING:      return "Some building was removed!";
+            case EffectType::REDUCE_MONEY_RATE:    return "Your money rate decreased!";
+            case EffectType::INCREASE_MONEY_RATE:  return "Your money rate increased!";
+            case EffectType::LOSE_MONEY:           return "You lost some money!";
+            case EffectType::GAIN_MONEY:           return "You gained some money!";
+            case EffectType::INFLATION:            return "Inflation is rising!";
+            case EffectType::DEFLATION:            return "Deflation is occurring!";
+            case EffectType::BAD_LUCK:             return "You luck decreased!";
+            case EffectType::GOOD_LUCK:            return "You luck increased!";
+            case EffectType::NO_EFFECT:            return "Noting has gone wrong.";
+            default:                               return "Unknown effect!";
+    }
+}

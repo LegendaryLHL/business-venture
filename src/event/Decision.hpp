@@ -51,5 +51,6 @@ public:
     Decision(std::string title, std::string desc, std::vector<EffectType> accept, std::vector<EffectType> decline);
     Decision() = default;
 
+    static std::string effectString(EffectType effect);
     static std::unordered_map<DecisionType, Decision> decisionMap;
 };

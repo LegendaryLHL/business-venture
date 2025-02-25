@@ -58,6 +58,7 @@ class Game{
         float keyPressCooldown = 0.3f;
         float moneyMultiplier = 1.0f;
         float bestTime = 0.0f;
+        float effectTimer = 0.0f;
         bool newGame = true;
         bool firstOrder = true;
         bool orderRunning = false;
@@ -65,6 +66,7 @@ class Game{
         bool firstOrderRunning = false;
         bool isPaused = true;
         bool isTrophie = false;
+        std::vector<EffectType>* recentEffect;
         Decision decision = Decision::decisionMap[DecisionType::FIRST_ORDER];
         int money = 100; 
         unsigned int difficulty = 1;

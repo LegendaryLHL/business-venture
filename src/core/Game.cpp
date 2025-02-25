@@ -225,9 +225,9 @@ void Game::panCamera(float height, float deltaTime){
 }
 
 void Game::executeDecision(bool isAccepted) {
-    std::vector<EffectType> effects = isAccepted ? decision.acceptEffect : decision.declineEffect;
+    std::vector<EffectType>* effects = isAccepted ? &decision.acceptEffect : &decision.declineEffect;
     
-    for (EffectType effect : effects) {
+    for (EffectType effect : *effects) {
         switch (effect) {
             case EffectType::GAIN_MONEY:
                 money += 30 * difficulty;
@@ -274,6 +274,8 @@ void Game::executeDecision(bool isAccepted) {
                 break;
         }
     }
+    effectTimer = 3.0f;
+    recentEffect = effects;
 }
 
 
@@ -286,6 +288,7 @@ void Game::update(float deltaTime){
         return;
     }
     cooldown -= deltaTime;
+    effectTimer -= deltaTime;
     eventCooldown -= deltaTime;
     moneyCooldown -= deltaTime;
     orderCooldown -= deltaTime;
@@ -304,6 +307,7 @@ void Game::update(float deltaTime){
 
         // If last entity already left then pause
         if(Entity::entities[Entity::entities.size() - 1]->getPosition().y < 2.0f){
+            newGame = true;
             isPaused = true;
         }
         return;
@@ -311,6 +315,7 @@ void Game::update(float deltaTime){
 
     if(isWon){
         isPaused = true;
+        newGame = true;
         return;
     }
 
@@ -523,6 +528,19 @@ void Game::ui() {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.75f));
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 
+        if (effectTimer > 0.0f) {
+            ImGui::SetNextWindowPos(ImVec2(10, 10));
+            ImGui::SetNextWindowBgAlpha(0.5f);
+            ImGui::Begin("Effect Notification", nullptr, flags | ImGuiWindowFlags_AlwaysAutoResize);
+
+            ImGui::Text("%s", "Effects: ");
+            for (EffectType effect : *recentEffect) {
+                ImGui::Text("%s", Decision::effectString(effect).c_str());
+            }
+
+            ImGui::End();
+        }
+
         if(decisionRunning){
             int boxHeight = static_cast<int>(windowHeight / 1.5f);
             int boxMargin = static_cast<int>(windowHeight / 20.0f);
@@ -564,6 +582,7 @@ void Game::ui() {
             }
             ImGui::SameLine(false);
             if (ImGui::Button("Decline", buttonSize)) {
+                executeDecision(false);
                 decisionRunning = false;
                 firstOrderRunning = false;
             }
@@ -617,6 +636,7 @@ void Game::gameInit(bool paused){
     moneyCooldown = 1.0f;
     eventCooldown = 10.0f;
     orderCooldown = 0.0f;
+    effectTimer = 0.0f;
     gameTime = 0.0f;
     orderRunning = false;
     isPaused = paused;
