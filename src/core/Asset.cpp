@@ -1,9 +1,7 @@
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
 #include "stb/stb_image.h"
 
 #include <stdexcept>
-#include <iostream>
 
 #include "Asset.hpp"
 
@@ -32,9 +30,9 @@ void Asset::load() {
     };
     Asset::vertexMap[Vertex::CUBE] = loadVertex(cubeVertices, cubeIndices);
 
-    Asset::textureMap[Texture::BUILDING] = loadTexture("../assets/image/building.jpg");
-    Asset::textureMap[Texture::GRASS] = loadTexture("../assets/image/grass.jpg");
-    Asset::textureMap[Texture::TUT] = loadTexture("../assets/image/tut.jpg");
+    Asset::textureMap[Texture::BUILDING] = loadTexture("assets/image/building.jpg");
+    Asset::textureMap[Texture::GRASS] = loadTexture("assets/image/grass.jpg");
+    Asset::textureMap[Texture::TUT] = loadTexture("assets/image/tut.jpg");
 }
 
 unsigned int Asset::loadTexture(std::string texturePath) {
