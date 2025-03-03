@@ -1,5 +1,3 @@
-#include <algorithm>
-
 #include "Building.hpp"
 #include "../core/Game.hpp"
 

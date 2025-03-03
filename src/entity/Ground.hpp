@@ -1,9 +1,5 @@
 #pragma once
 
-#include "glm/glm.hpp"
-
-#include <iostream>
-
 #include "Entity.hpp"
 #include "../core/Asset.hpp"
 

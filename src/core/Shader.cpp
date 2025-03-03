@@ -1,4 +1,3 @@
-#include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glad/glad.h"
 
@@ -11,8 +10,8 @@
 Shader::Shader(){}
 
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath){
-    auto vertexShaderSource = readFile("../shaders/shader.vert");
-    auto fragmentShaderSource = readFile("../shaders/shader.frag");
+    auto vertexShaderSource = readFile(vertexPath);
+    auto fragmentShaderSource = readFile(fragmentPath);
     const char* vertexShaderSrc = vertexShaderSource.get();
     const char* fragmentShaderSrc = fragmentShaderSource.get();
 

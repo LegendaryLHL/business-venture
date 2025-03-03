@@ -1,8 +1,8 @@
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include "glm/gtc/matrix_transform.hpp"
 
-#include <iostream>
 #include <algorithm>
+#include <stdexcept>
 
 #include "Entity.hpp"
 
@@ -48,7 +48,7 @@ Entity* Entity::checkCollision() {
     return nullptr;
 }
 
-void Entity::update(float deltaTime){}
+void Entity::update(float /*deltaTime*/){}
 
 void Entity::remove(){
     auto it = std::find_if(entities.begin(), entities.end(),

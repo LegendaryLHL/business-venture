@@ -1,16 +1,11 @@
 #pragma once
 
 #include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
 #include <SDL2/SDL_mixer.h>
 
 #include <string>
 #include <vector>
-#include <memory>
-#include <set>
 
-#include "../entity/Entity.hpp"
-#include "../entity/Building.hpp"
 #include "../event/Decision.hpp"
 #include "Shader.hpp"
 

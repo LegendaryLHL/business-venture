@@ -6,7 +6,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
-#include <memory>
 #include <math.h>
 #include <iostream>
 #include <stdexcept>
@@ -18,7 +17,6 @@
 #include "../entity/Building.hpp"
 #include "../entity/Ground.hpp"
 #include "../entity/Entity.hpp"
-#include "../debug/Debug.hpp"
 
 #define BUILDING_PLACEMENT 4.0f
 #define BUILDING_DEPTH -5.0f
@@ -120,7 +118,7 @@ void Game::init(){
         throw std::runtime_error("Failed to initialize GLAD");
     }
 
-    shader = Shader("../shaders/shader.vert", "../shaders/shader.frag");
+    shader = Shader("assets/shaders/shader.vert", "assets/shaders/shader.frag");
     
     glEnable(GL_DEPTH_TEST);
 
@@ -136,8 +134,8 @@ void Game::init(){
     ImGui_ImplOpenGL3_Init("#version 330");
 
     ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 24.0f);
-    io.Fonts->AddFontFromFileTTF("../assets/fonts/PixelOperator.ttf", 36.0f);
+    io.Fonts->AddFontFromFileTTF("assets/fonts/PixelOperator.ttf", 24.0f);
+    io.Fonts->AddFontFromFileTTF("assets/fonts/PixelOperator.ttf", 36.0f);
     ImGui_ImplOpenGL3_CreateFontsTexture();
 
 
@@ -152,19 +150,19 @@ void Game::init(){
         throw std::runtime_error(error.c_str());
     }
 
-    bgMusic = Mix_LoadMUS("../assets/sound/BusinessVenture.wav");
+    bgMusic = Mix_LoadMUS("assets/sound/BusinessVenture.wav");
     if (!bgMusic) {
         std::string error = std::string("Failed to load background music: ") + Mix_GetError();
         throw std::runtime_error(error.c_str());
     }
 
-    soundEffect = Mix_LoadWAV("../assets/sound/SoundEffect1.wav");
+    soundEffect = Mix_LoadWAV("assets/sound/SoundEffect1.wav");
     if (!soundEffect) {
         std::string error = std::string("Failed to load sound effect: ") + Mix_GetError();
         throw std::runtime_error(error.c_str());
     }
 
-    soundEffect2 = Mix_LoadWAV("../assets/sound/SoundEffect2.wav");
+    soundEffect2 = Mix_LoadWAV("assets/sound/SoundEffect2.wav");
     if (!soundEffect2) {
         std::string error = std::string("Failed to load sound effect: ") + Mix_GetError();
         throw std::runtime_error(error.c_str());
@@ -247,7 +245,7 @@ void Game::executeDecision(bool isAccepted) {
                 break;
 
             case EffectType::REMOVE_BUILDING:
-                for (int i = 0; i < difficulty; i++) {
+                for (unsigned int i = 0; i < difficulty; i++) {
                     Building* building = *Building::buildingBst.rbegin();
                     building->remove();
                 }
@@ -375,7 +373,7 @@ void Game::update(float deltaTime){
 
 
     if(orderRunning && orderCooldown <= 0.0f){
-        if(Building::countTop() == topRequired){
+        if(static_cast<unsigned int>(Building::countTop()) == topRequired){
             if(cameraPosition.y / 300.0f > 0.4f){
                 infoText = topInfoTexts[round(randomValue(0, topInfoTexts.size() - 1))];
             }
