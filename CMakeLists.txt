@@ -6,8 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
-
-add_subdirectory(external/SDL)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_mixer CONFIG REQUIRED)
 
 execute_process(
     COMMAND git submodule update --init --recursive
@@ -25,7 +25,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw ExternalLib glm::glm SDL2::SDL2 SDL2::SDL2_mixer)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw ExternalLib glm::glm SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 
