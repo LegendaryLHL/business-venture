@@ -7,6 +7,13 @@ Made for Brackeys Game Jam 2025.1 [Link to submission](https://itch.io/jam/brack
 Stack buildings to grow your business—what could go wrong? Higher towers mean bigger profits, guaranteed success, and absolutely no structural concerns. Just keep building, follow corporate mandates, and you’ll win in no time… probably.
 
 ---
+### Build Instructions (Linux Only)
+To set up the necessary dependencies for building, run the following command:
+```sh
+sudo apt-get install -y pkg-config cmake libglfw3-dev libglfw3 libglm-dev libsdl2-dev libsdl2-mixer-dev
+```
+
+---
 
 - Menu
 
